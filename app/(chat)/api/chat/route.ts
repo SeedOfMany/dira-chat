@@ -37,6 +37,7 @@ import {
   saveMessages,
   updateChatLastContextById,
 } from "@/lib/db/queries";
+import { extractTextFromDOCX } from "@/lib/documents/process";
 import { ChatSDKError } from "@/lib/errors";
 import type { ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
@@ -47,6 +48,53 @@ import { type PostRequestBody, postRequestBodySchema } from "./schema";
 export const maxDuration = 60;
 
 let globalStreamContext: ResumableStreamContext | null = null;
+
+/**
+ * Process DOCX files in message parts by extracting text content
+ * and converting them to text parts
+ */
+async function processDocxFiles(message: ChatMessage): Promise<ChatMessage> {
+  const processedParts = await Promise.all(
+    message.parts.map(async (part) => {
+      // Only process DOCX file parts
+      if (
+        part.type === "file" &&
+        part.mediaType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ) {
+        try {
+          // Fetch the DOCX file from the URL
+          const response = await fetch(part.url);
+          const arrayBuffer = await response.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+
+          // Extract text from DOCX
+          const { text } = await extractTextFromDOCX(buffer);
+
+          // Convert to text part with document context
+          return {
+            type: "text" as const,
+            text: `[Document: ${part.name}]\n\n${text}`,
+          };
+        } catch (error) {
+          console.error(`Failed to process DOCX file ${part.name}:`, error);
+          // Fallback to text part with error message
+          return {
+            type: "text" as const,
+            text: `[Failed to process document: ${part.name}]`,
+          };
+        }
+      }
+
+      // Return other parts unchanged
+      return part;
+    })
+  );
+
+  return {
+    ...message,
+    parts: processedParts,
+  };
+}
 
 const getTokenlensCatalog = cache(
   async (): Promise<ModelCatalog | undefined> => {
@@ -144,7 +192,11 @@ export async function POST(request: Request) {
     }
 
     const messagesFromDb = await getMessagesByChatId({ id });
-    const uiMessages = [...convertToUIMessages(messagesFromDb), message];
+
+    // Process DOCX files: extract text and convert to text parts
+    const processedMessage = await processDocxFiles(message);
+
+    const uiMessages = [...convertToUIMessages(messagesFromDb), processedMessage];
 
     const { longitude, latitude, city, country } = geolocation(request);
 
@@ -180,15 +232,12 @@ export async function POST(request: Request) {
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
-          experimental_activeTools:
-            selectedChatModel === "chat-model-reasoning"
-              ? []
-              : [
-                  "getWeather",
-                  "createDocument",
-                  "updateDocument",
-                  "requestSuggestions",
-                ],
+          experimental_activeTools: [
+            "getWeather",
+            "createDocument",
+            "updateDocument",
+            "requestSuggestions",
+          ],
           experimental_transform: smoothStream({ chunking: "word" }),
           tools: {
             getWeather,

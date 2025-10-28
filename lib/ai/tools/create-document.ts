@@ -1,6 +1,5 @@
-import { tool, type UIMessageStreamWriter } from "ai";
+import { tool, jsonSchema, type UIMessageStreamWriter } from "ai";
 import type { Session } from "next-auth";
-import { z } from "zod";
 import {
   artifactKinds,
   documentHandlersByArtifactKind,
@@ -17,9 +16,20 @@ export const createDocument = ({ session, dataStream }: CreateDocumentProps) =>
   tool({
     description:
       "Create a document for a writing or content creation activities. This tool will call other functions that will generate the contents of the document based on the title and kind.",
-    inputSchema: z.object({
-      title: z.string(),
-      kind: z.enum(artifactKinds),
+    inputSchema: jsonSchema<{ title: string; kind: typeof artifactKinds[number] }>({
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          description: "The title of the document"
+        },
+        kind: {
+          type: "string",
+          enum: artifactKinds as unknown as string[],
+          description: "The type of document to create"
+        }
+      },
+      required: ["title", "kind"]
     }),
     execute: async ({ title, kind }) => {
       const id = generateUUID();

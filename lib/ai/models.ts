@@ -12,9 +12,4 @@ export const chatModels: ChatModel[] = [
     name: "Claude 3.5 Haiku",
     description: "Fast and efficient AI model for legal analysis",
   },
-  {
-    id: "chat-model-reasoning",
-    name: "Claude 3.5 Haiku",
-    description: "Fast and efficient AI model for legal analysis",
-  },
 ];

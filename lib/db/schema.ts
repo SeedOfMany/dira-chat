@@ -183,6 +183,7 @@ export const legalDocument = pgTable("LegalDocument", {
   fileType: varchar("fileType", { length: 10 }).notNull(), // 'pdf' or 'docx'
   category: text("category"), // e.g., 'labor_law', 'tax_regulation'
   status: varchar("status", { length: 20 }).notNull().default("processing"), // 'processing', 'ready', 'failed'
+  archived: boolean("archived").notNull().default(false), // Archived documents won't appear in search
   uploadedAt: timestamp("uploadedAt").notNull().defaultNow(),
   processedAt: timestamp("processedAt"),
   metadata: jsonb("metadata"), // Additional metadata like page count, author, etc.

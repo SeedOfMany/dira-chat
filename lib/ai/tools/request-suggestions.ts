@@ -1,4 +1,4 @@
-import { streamObject, tool, type UIMessageStreamWriter } from "ai";
+import { streamObject, tool, jsonSchema, type UIMessageStreamWriter } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
 import { getDocumentById, saveSuggestions } from "@/lib/db/queries";
@@ -18,10 +18,15 @@ export const requestSuggestions = ({
 }: RequestSuggestionsProps) =>
   tool({
     description: "Request suggestions for a document",
-    inputSchema: z.object({
-      documentId: z
-        .string()
-        .describe("The ID of the document to request edits"),
+    inputSchema: jsonSchema<{ documentId: string }>({
+      type: "object",
+      properties: {
+        documentId: {
+          type: "string",
+          description: "The ID of the document to request edits"
+        }
+      },
+      required: ["documentId"]
     }),
     execute: async ({ documentId }) => {
       const document = await getDocumentById({ id: documentId });
