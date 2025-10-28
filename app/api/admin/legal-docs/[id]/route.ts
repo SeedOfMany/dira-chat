@@ -9,7 +9,7 @@ import { del } from "@vercel/blob";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
 
@@ -18,7 +18,7 @@ export async function DELETE(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
 
     // Get document to delete from blob storage
     const document = await getLegalDocumentById(id);
@@ -53,7 +53,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
 
@@ -62,7 +62,7 @@ export async function PATCH(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const { archived } = await request.json();
 
     if (typeof archived !== "boolean") {
