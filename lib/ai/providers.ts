@@ -1,4 +1,5 @@
-import { gateway } from "@ai-sdk/gateway";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import {
   customProvider,
   extractReasoningMiddleware,
@@ -25,12 +26,12 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        "chat-model": gateway.languageModel("xai/grok-2-vision-1212"),
-        "chat-model-reasoning": wrapLanguageModel({
-          model: gateway.languageModel("xai/grok-3-mini"),
-          middleware: extractReasoningMiddleware({ tagName: "think" }),
-        }),
-        "title-model": gateway.languageModel("xai/grok-2-1212"),
-        "artifact-model": gateway.languageModel("xai/grok-2-1212"),
+        "chat-model": anthropic("claude-3-5-haiku-20241022"),
+        "chat-model-reasoning": anthropic("claude-3-5-haiku-20241022"),
+        "title-model": anthropic("claude-3-5-haiku-20241022"),
+        "artifact-model": anthropic("claude-3-5-haiku-20241022"),
       },
     });
+
+// Google embedding model for vector search
+export const embeddingModel = google.textEmbeddingModel("text-embedding-004");

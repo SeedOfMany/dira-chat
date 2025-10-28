@@ -2,6 +2,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  index,
   json,
   jsonb,
   pgTable,
@@ -10,6 +11,7 @@ import {
   timestamp,
   uuid,
   varchar,
+  vector,
 } from "drizzle-orm/pg-core";
 import type { AppUsage } from "../usage";
 
@@ -171,3 +173,62 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+// Legal documents uploaded by admin (laws, regulations, etc.)
+export const legalDocument = pgTable("LegalDocument", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  title: text("title").notNull(),
+  fileName: text("fileName").notNull(),
+  fileUrl: text("fileUrl").notNull(), // Vercel Blob URL
+  fileType: varchar("fileType", { length: 10 }).notNull(), // 'pdf' or 'docx'
+  category: text("category"), // e.g., 'labor_law', 'tax_regulation'
+  status: varchar("status", { length: 20 }).notNull().default("processing"), // 'processing', 'ready', 'failed'
+  uploadedAt: timestamp("uploadedAt").notNull().defaultNow(),
+  processedAt: timestamp("processedAt"),
+  metadata: jsonb("metadata"), // Additional metadata like page count, author, etc.
+});
+
+export type LegalDocument = InferSelectModel<typeof legalDocument>;
+
+// Chunks from legal documents with embeddings for RAG
+export const legalChunk = pgTable(
+  "LegalChunk",
+  {
+    id: uuid("id").primaryKey().notNull().defaultRandom(),
+    documentId: uuid("documentId")
+      .notNull()
+      .references(() => legalDocument.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    embedding: vector("embedding", { dimensions: 768 }), // Google text-embedding-004 is 768 dimensions
+    chunkIndex: text("chunkIndex").notNull(), // Position in document
+    metadata: jsonb("metadata"), // Page number, section title, etc.
+    createdAt: timestamp("createdAt").notNull().defaultNow(),
+  },
+  (table) => ({
+    embeddingIndex: index("legal_chunk_embedding_idx").using(
+      "hnsw",
+      table.embedding.op("vector_cosine_ops")
+    ),
+  })
+);
+
+export type LegalChunk = InferSelectModel<typeof legalChunk>;
+
+// User contracts uploaded for analysis
+export const userContract = pgTable("UserContract", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  chatId: uuid("chatId").references(() => chat.id),
+  fileName: text("fileName").notNull(),
+  fileUrl: text("fileUrl").notNull(), // Vercel Blob URL
+  fileType: varchar("fileType", { length: 10 }).notNull(),
+  uploadedAt: timestamp("uploadedAt").notNull().defaultNow(),
+  analysisStatus: varchar("analysisStatus", { length: 20 })
+    .notNull()
+    .default("pending"),
+  analysisResult: jsonb("analysisResult"), // Store AI analysis results
+});
+
+export type UserContract = InferSelectModel<typeof userContract>;
