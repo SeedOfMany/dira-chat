@@ -240,6 +240,11 @@ export async function POST(request: Request) {
                 budget_tokens: 2000,
               },
             },
+            google: {
+              thinkingConfig: {
+                enabled: true,
+              },
+            },
           },
           tools: {
             getWeather,

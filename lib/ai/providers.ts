@@ -26,10 +26,23 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        "chat-model": anthropic("claude-3-7-sonnet-20250219"),
-        "chat-model-reasoning": anthropic("claude-3-7-sonnet-20250219"),
+        "chat-model": wrapLanguageModel({
+          model: anthropic("claude-3-7-sonnet-20250219"),
+          middleware: extractReasoningMiddleware({ tagName: "thinking" }),
+        }),
+        "chat-model-reasoning": wrapLanguageModel({
+          model: anthropic("claude-3-7-sonnet-20250219"),
+          middleware: extractReasoningMiddleware({ tagName: "thinking" }),
+        }),
+        "gemini-2.5-pro": wrapLanguageModel({
+          model: google("gemini-2.5-pro-exp-03-25"),
+          middleware: extractReasoningMiddleware({ tagName: "thinking" }),
+        }),
         "title-model": anthropic("claude-3-5-haiku-20241022"),
-        "artifact-model": anthropic("claude-3-7-sonnet-20250219"),
+        "artifact-model": wrapLanguageModel({
+          model: anthropic("claude-3-7-sonnet-20250219"),
+          middleware: extractReasoningMiddleware({ tagName: "thinking" }),
+        }),
       },
     });
 
