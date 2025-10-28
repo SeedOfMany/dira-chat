@@ -25,6 +25,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Response } from "@/components/ai-elements/response";
+import { Actions, Action } from "@/components/ai-elements/actions";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationEmptyState,
+  ConversationScrollButton
+} from "@/components/ai-elements/conversation";
+import {
+  ChainOfThought,
+  ChainOfThoughtHeader,
+  ChainOfThoughtContent,
+  ChainOfThoughtStep,
+} from "@/components/ai-elements/chain-of-thought";
+import { Copy, RefreshCw, Search, FileText, Lightbulb } from "lucide-react";
 
 type LegalDocument = {
   id: string;
@@ -77,6 +92,31 @@ export default function AdminDocumentChatPage() {
   useEffect(() => {
     loadDocument();
   }, [documentId]);
+
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast.success("Copied to clipboard");
+    } catch (error) {
+      toast.error("Failed to copy");
+    }
+  };
+
+  const handleRegenerateMessage = (messageId: string) => {
+    // Find the message index
+    const messageIndex = messages.findIndex(m => m.id === messageId);
+    if (messageIndex === -1) return;
+
+    // Remove all messages from this point forward
+    const newMessages = messages.slice(0, messageIndex);
+    setMessages(newMessages);
+
+    // Get the last user message to regenerate
+    const lastUserMessage = newMessages[newMessages.length - 1];
+    if (lastUserMessage && lastUserMessage.role === "user") {
+      sendMessage({ content: lastUserMessage.content, role: "user" });
+    }
+  };
 
   const loadDocument = async () => {
     try {
@@ -280,42 +320,90 @@ export default function AdminDocumentChatPage() {
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 && document.status === "ready" && (
-          <div className="flex flex-col items-center justify-center h-full text-center">
-            <FileIcon className="h-12 w-12 text-muted-foreground mb-4" />
-            <h2 className="text-lg font-semibold mb-2">Ask questions about this document</h2>
-            <p className="text-sm text-muted-foreground max-w-md">
-              You can ask questions about the content, request summaries, or get specific information from the document.
-            </p>
-          </div>
-        )}
+      <Conversation>
+        <ConversationScrollButton />
+        <ConversationContent>
+          {messages.length === 0 && document.status === "ready" ? (
+            <ConversationEmptyState
+              icon={<FileIcon className="h-12 w-12" />}
+              title="Ask questions about this document"
+              description="You can ask questions about the content, request summaries, or get specific information from the document."
+            />
+          ) : (
+            <div className="space-y-4">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex flex-col gap-2 ${message.role === "user" ? "items-end" : "items-start"}`}
+                >
+                  <div className={`max-w-[80%] ${message.role === "user" ? "" : "w-full"}`}>
+                    {message.role === "assistant" ? (
+                      <div className="space-y-3">
+                        {/* Chain of Thought - Show reasoning steps */}
+                        {message.annotations && message.annotations.length > 0 && (
+                          <ChainOfThought defaultOpen={false}>
+                            <ChainOfThoughtHeader>
+                              Thinking Process
+                            </ChainOfThoughtHeader>
+                            <ChainOfThoughtContent>
+                              {message.annotations
+                                .filter((ann: any) => ann.type === "reasoning")
+                                .map((ann: any, idx: number) => (
+                                  <ChainOfThoughtStep
+                                    key={idx}
+                                    icon={idx === 0 ? Search : idx === 1 ? FileText : Lightbulb}
+                                    label={ann.value?.reasoning || ann.value}
+                                    status="complete"
+                                  />
+                                ))}
+                            </ChainOfThoughtContent>
+                          </ChainOfThought>
+                        )}
 
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <div
-              className={`rounded-lg px-4 py-2 max-w-[80%] ${
-                message.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
-              }`}
-            >
-              <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-            </div>
-          </div>
-        ))}
+                        {/* Response */}
+                        <div className="rounded-lg px-4 py-2 bg-muted">
+                          <Response className="text-sm prose prose-sm dark:prose-invert max-w-none">
+                            {message.content}
+                          </Response>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg px-4 py-2 bg-primary text-primary-foreground">
+                        <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                      </div>
+                    )}
+                  </div>
+                  {message.role === "assistant" && (
+                    <Actions>
+                      <Action
+                        tooltip="Copy"
+                        onClick={() => handleCopyMessage(message.content)}
+                      >
+                        <Copy className="size-4" />
+                      </Action>
+                      <Action
+                        tooltip="Regenerate"
+                        onClick={() => handleRegenerateMessage(message.id)}
+                        disabled={isLoading}
+                      >
+                        <RefreshCw className="size-4" />
+                      </Action>
+                    </Actions>
+                  )}
+                </div>
+              ))}
 
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-muted rounded-lg px-4 py-2">
-              <div className="text-sm text-muted-foreground">Thinking...</div>
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-muted rounded-lg px-4 py-2">
+                    <div className="text-sm text-muted-foreground">Thinking...</div>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </ConversationContent>
+      </Conversation>
 
       {/* Chat Input */}
       <div className="border-t p-4">

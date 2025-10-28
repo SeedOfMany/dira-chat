@@ -26,10 +26,10 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        "chat-model": anthropic("claude-3-5-haiku-20241022"),
-        "chat-model-reasoning": anthropic("claude-3-5-haiku-20241022"),
+        "chat-model": anthropic("claude-3-7-sonnet-20250219"),
+        "chat-model-reasoning": anthropic("claude-3-7-sonnet-20250219"),
         "title-model": anthropic("claude-3-5-haiku-20241022"),
-        "artifact-model": anthropic("claude-3-5-haiku-20241022"),
+        "artifact-model": anthropic("claude-3-7-sonnet-20250219"),
       },
     });
 

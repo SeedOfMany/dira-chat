@@ -232,13 +232,15 @@ export async function POST(request: Request) {
           system: systemPrompt({ selectedChatModel, requestHints }),
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
-          experimental_activeTools: [
-            "getWeather",
-            "createDocument",
-            "updateDocument",
-            "requestSuggestions",
-          ],
           experimental_transform: smoothStream({ chunking: "word" }),
+          experimental_providerMetadata: {
+            anthropic: {
+              thinkingConfig: {
+                type: "enabled",
+                budget_tokens: 2000,
+              },
+            },
+          },
           tools: {
             getWeather,
             createDocument: createDocument({ session, dataStream }),
