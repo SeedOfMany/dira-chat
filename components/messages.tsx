@@ -91,6 +91,25 @@ function PureMessages({
             />
           ))}
 
+          {/* Show placeholder assistant message immediately when submitted */}
+          {status === "submitted" && (
+            <PreviewMessage
+              chatId={chatId}
+              isLoading={true}
+              isReadonly={isReadonly}
+              key="placeholder-assistant"
+              message={{
+                id: "temp-assistant",
+                role: "assistant",
+                parts: [],
+              }}
+              regenerate={regenerate}
+              requiresScrollPadding={false}
+              setMessages={setMessages}
+              vote={undefined}
+            />
+          )}
+
           <div
             className="min-h-[24px] min-w-[24px] shrink-0"
             ref={messagesEndRef}
