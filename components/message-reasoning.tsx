@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Reasoning,
   ReasoningContent,
@@ -17,18 +17,28 @@ export function MessageReasoning({
   reasoning,
 }: MessageReasoningProps) {
   const [hasBeenStreaming, setHasBeenStreaming] = useState(isLoading);
+  const [isReasoningStreaming, setIsReasoningStreaming] = useState(false);
+  const previousReasoningLength = useRef(reasoning.length);
 
   useEffect(() => {
     if (isLoading) {
       setHasBeenStreaming(true);
+      // Check if reasoning content is actively growing
+      if (reasoning.length > previousReasoningLength.current) {
+        setIsReasoningStreaming(true);
+        previousReasoningLength.current = reasoning.length;
+      }
+    } else {
+      // When loading stops, reasoning is done
+      setIsReasoningStreaming(false);
     }
-  }, [isLoading]);
+  }, [isLoading, reasoning.length]);
 
   return (
     <Reasoning
       data-testid="message-reasoning"
       defaultOpen={hasBeenStreaming}
-      isStreaming={isLoading}
+      isStreaming={isReasoningStreaming}
     >
       <ReasoningTrigger />
       <ReasoningContent>{reasoning}</ReasoningContent>
