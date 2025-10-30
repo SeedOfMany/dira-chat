@@ -54,11 +54,9 @@ const PurePreviewMessage = ({
 
   return (
     <motion.div
-      animate={{ opacity: 1 }}
       className="group/message w-full"
       data-role={message.role}
       data-testid={`message-${message.role}`}
-      initial={{ opacity: 0 }}
     >
       <div
         className={cn("flex w-full items-start gap-2 md:gap-3", {
