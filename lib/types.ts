@@ -30,6 +30,22 @@ export type ChatTools = {
   requestSuggestions: requestSuggestionsTool;
 };
 
+export type TaskProgressItem = {
+  text: string;
+  status?: "pending" | "running" | "completed" | "error";
+  file?: {
+    name: string;
+    icon?: string;
+  };
+};
+
+export type TaskProgress = {
+  taskId: string;
+  title: string;
+  items: TaskProgressItem[];
+  status?: "pending" | "running" | "completed" | "error";
+};
+
 export type CustomUIDataTypes = {
   textDelta: string;
   imageDelta: string;
@@ -43,6 +59,7 @@ export type CustomUIDataTypes = {
   clear: null;
   finish: null;
   usage: AppUsage;
+  taskProgress: TaskProgress;
 };
 
 export type ChatMessage = UIMessage<

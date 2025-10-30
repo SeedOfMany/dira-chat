@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ import {
   Conversation,
   ConversationContent,
   ConversationEmptyState,
-  ConversationScrollButton
+  ConversationScrollButton,
 } from "@/components/ai-elements/conversation";
 import {
   ChainOfThought,
@@ -39,7 +39,9 @@ import {
   ChainOfThoughtContent,
   ChainOfThoughtStep,
 } from "@/components/ai-elements/chain-of-thought";
+import { MessageTask } from "@/components/message-task";
 import { Copy, RefreshCw, Search, FileText, Lightbulb } from "lucide-react";
+import type { TaskProgress } from "@/lib/types";
 
 type LegalDocument = {
   id: string;
@@ -62,6 +64,7 @@ export default function AdminDocumentChatPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isReprocessing, setIsReprocessing] = useState(false);
   const [input, setInput] = useState("");
+  const [showSearchProgress, setShowSearchProgress] = useState(false);
 
   const { messages, setMessages, sendMessage, status } = useChat({
     id: documentId,
@@ -82,12 +85,23 @@ export default function AdminDocumentChatPage() {
       console.error("Chat error:", error);
       toast.error(`Chat error: ${error.message}`);
     },
-    onFinish: (message) => {
-      console.log("Chat finished:", message);
+    onFinish: () => {
+      console.log("Chat finished");
+      setShowSearchProgress(false);
     },
   });
 
   const isLoading = status === "streaming";
+
+  // Show search progress when starting to send a message
+  useEffect(() => {
+    if (isLoading && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage?.role === "user") {
+        setShowSearchProgress(true);
+      }
+    }
+  }, [isLoading, messages]);
 
   useEffect(() => {
     loadDocument();
@@ -104,7 +118,7 @@ export default function AdminDocumentChatPage() {
 
   const handleRegenerateMessage = (messageId: string) => {
     // Find the message index
-    const messageIndex = messages.findIndex(m => m.id === messageId);
+    const messageIndex = messages.findIndex((m) => m.id === messageId);
     if (messageIndex === -1) return;
 
     // Remove all messages from this point forward
@@ -196,10 +210,10 @@ export default function AdminDocumentChatPage() {
       }
 
       setDocument((prev) =>
-        prev ? { ...prev, archived: !prev.archived } : null
+        prev ? { ...prev, archived: !prev.archived } : null,
       );
       toast.success(
-        `Document ${!document.archived ? "archived" : "unarchived"} successfully`
+        `Document ${!document.archived ? "archived" : "unarchived"} successfully`,
       );
     } catch (error) {
       toast.error("Failed to update document");
@@ -264,7 +278,9 @@ export default function AdminDocumentChatPage() {
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <h1 className="text-xl font-semibold">{document.title}</h1>
-                <p className="text-sm text-muted-foreground">{document.fileName}</p>
+                <p className="text-sm text-muted-foreground">
+                  {document.fileName}
+                </p>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -273,7 +289,10 @@ export default function AdminDocumentChatPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleReprocess} disabled={isReprocessing}>
+                  <DropdownMenuItem
+                    onClick={handleReprocess}
+                    disabled={isReprocessing}
+                  >
                     {isReprocessing ? "Reprocessing..." : "Reprocess"}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleArchive}>
@@ -295,9 +314,7 @@ export default function AdminDocumentChatPage() {
               <Badge variant={getStatusVariant(document.status)}>
                 {document.status}
               </Badge>
-              {document.archived && (
-                <Badge variant="outline">Archived</Badge>
-              )}
+              {document.archived && <Badge variant="outline">Archived</Badge>}
               {document.chunkCount !== undefined && document.chunkCount > 0 && (
                 <Badge variant="outline">{document.chunkCount} chunks</Badge>
               )}
@@ -307,11 +324,17 @@ export default function AdminDocumentChatPage() {
         {document.status !== "ready" && (
           <div className="mt-4 p-3 bg-muted rounded-md text-sm">
             {document.status === "processing" && (
-              <p>⏳ This document is still being processed. Chat functionality will be available once processing is complete.</p>
+              <p>
+                ⏳ This document is still being processed. Chat functionality
+                will be available once processing is complete.
+              </p>
             )}
             {document.status === "failed" && (
               <div className="flex items-center justify-between">
-                <p className="text-destructive">❌ Document processing failed. You can try reprocessing or re-upload the document.</p>
+                <p className="text-destructive">
+                  ❌ Document processing failed. You can try reprocessing or
+                  re-upload the document.
+                </p>
                 <Button onClick={handleReprocess} variant="outline" size="sm">
                   Reprocess
                 </Button>
@@ -338,42 +361,90 @@ export default function AdminDocumentChatPage() {
                   key={message.id}
                   className={`flex flex-col gap-2 ${message.role === "user" ? "items-end" : "items-start"}`}
                 >
-                  <div className={`max-w-[80%] ${message.role === "user" ? "" : "w-full"}`}>
+                  <div
+                    className={`max-w-[80%] ${message.role === "user" ? "" : "w-full"}`}
+                  >
                     {message.role === "assistant" ? (
                       <div className="space-y-3">
+                        {/* Task Progress - Show search/processing steps */}
+                        {isLoading &&
+                          showSearchProgress &&
+                          messages[messages.length - 1]?.id === message.id && (
+                            <MessageTask
+                              taskProgress={{
+                                taskId: `search-${message.id}`,
+                                title: "Searching legal documents",
+                                items: [
+                                  {
+                                    text: "✓ Understanding your question",
+                                    status: "completed",
+                                  },
+                                  {
+                                    text: "✓ Preparing search",
+                                    status: "completed",
+                                  },
+                                  {
+                                    text: "Finding relevant sections...",
+                                    status: "running",
+                                  },
+                                ],
+                                status: "running",
+                              }}
+                              isLoading={true}
+                            />
+                          )}
+
                         {/* Chain of Thought - Show reasoning steps */}
                         {(() => {
-                          const reasoningParts = message.parts.filter((part: any) => part.type === "reasoning");
-                          return reasoningParts.length > 0 && (
-                            <ChainOfThought defaultOpen={false}>
-                              <ChainOfThoughtHeader>
-                                Thinking Process
-                              </ChainOfThoughtHeader>
-                              <ChainOfThoughtContent>
-                                {reasoningParts.map((part: any, idx: number) => (
-                                  <ChainOfThoughtStep
-                                    key={idx}
-                                    icon={idx === 0 ? Search : idx === 1 ? FileText : Lightbulb}
-                                    label={part.text}
-                                    status="complete"
-                                  />
-                                ))}
-                              </ChainOfThoughtContent>
-                            </ChainOfThought>
+                          const reasoningParts = message.parts.filter(
+                            (part: any) => part.type === "reasoning",
+                          );
+                          return (
+                            reasoningParts.length > 0 && (
+                              <ChainOfThought defaultOpen={false}>
+                                <ChainOfThoughtHeader>
+                                  Thinking Process
+                                </ChainOfThoughtHeader>
+                                <ChainOfThoughtContent>
+                                  {reasoningParts.map(
+                                    (part: any, idx: number) => (
+                                      <ChainOfThoughtStep
+                                        key={idx}
+                                        icon={
+                                          idx === 0
+                                            ? Search
+                                            : idx === 1
+                                              ? FileText
+                                              : Lightbulb
+                                        }
+                                        label={part.text}
+                                        status="complete"
+                                      />
+                                    ),
+                                  )}
+                                </ChainOfThoughtContent>
+                              </ChainOfThought>
+                            )
                           );
                         })()}
 
                         {/* Response */}
                         <div className="rounded-lg px-4 py-2 bg-muted">
                           <Response className="text-sm prose prose-sm dark:prose-invert max-w-none">
-                            {message.parts.filter((part: any) => part.type === "text").map((part: any) => part.text).join("")}
+                            {message.parts
+                              .filter((part: any) => part.type === "text")
+                              .map((part: any) => part.text)
+                              .join("")}
                           </Response>
                         </div>
                       </div>
                     ) : (
                       <div className="rounded-lg px-4 py-2 bg-primary text-primary-foreground">
                         <div className="text-sm whitespace-pre-wrap">
-                          {message.parts.filter((part: any) => part.type === "text").map((part: any) => part.text).join("")}
+                          {message.parts
+                            .filter((part: any) => part.type === "text")
+                            .map((part: any) => part.text)
+                            .join("")}
                         </div>
                       </div>
                     )}
@@ -382,7 +453,14 @@ export default function AdminDocumentChatPage() {
                     <Actions>
                       <Action
                         tooltip="Copy"
-                        onClick={() => handleCopyMessage(message.parts.filter((part: any) => part.type === "text").map((part: any) => part.text).join(""))}
+                        onClick={() =>
+                          handleCopyMessage(
+                            message.parts
+                              .filter((part: any) => part.type === "text")
+                              .map((part: any) => part.text)
+                              .join(""),
+                          )
+                        }
                       >
                         <Copy className="size-4" />
                       </Action>
@@ -401,7 +479,9 @@ export default function AdminDocumentChatPage() {
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="bg-muted rounded-lg px-4 py-2">
-                    <div className="text-sm text-muted-foreground">Thinking...</div>
+                    <div className="text-sm text-muted-foreground">
+                      Thinking...
+                    </div>
                   </div>
                 </div>
               )}
@@ -415,10 +495,14 @@ export default function AdminDocumentChatPage() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (!input.trim() || isLoading || document.status !== "ready") return;
+            if (!input.trim() || isLoading || document.status !== "ready")
+              return;
 
             console.log("Sending message:", { input, documentId });
-            sendMessage({ parts: [{ type: "text", text: input }], role: "user" });
+            sendMessage({
+              parts: [{ type: "text", text: input }],
+              role: "user",
+            });
             setInput("");
           }}
           className="flex gap-2"
@@ -436,7 +520,9 @@ export default function AdminDocumentChatPage() {
           />
           <Button
             type="submit"
-            disabled={isLoading || document.status !== "ready" || !input?.trim()}
+            disabled={
+              isLoading || document.status !== "ready" || !input?.trim()
+            }
           >
             {isLoading ? "Sending..." : "Send"}
           </Button>
