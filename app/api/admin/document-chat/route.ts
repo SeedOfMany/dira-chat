@@ -93,31 +93,6 @@ When answering:
     // Stream response using Google Gemini
     const stream = createUIMessageStream({
       execute: ({ writer: dataStream }) => {
-        // Send reasoning steps to show AI thinking process
-        dataStream.writeMessageAnnotation({
-          type: "reasoning",
-          value: {
-            type: "reasoning-step",
-            reasoning: "Searching for relevant information in the document...",
-          },
-        });
-
-        dataStream.writeMessageAnnotation({
-          type: "reasoning",
-          value: {
-            type: "reasoning-step",
-            reasoning: `Found ${relevantChunks.length} relevant sections from the document.`,
-          },
-        });
-
-        dataStream.writeMessageAnnotation({
-          type: "reasoning",
-          value: {
-            type: "reasoning-step",
-            reasoning: "Analyzing the context and formulating a response...",
-          },
-        });
-
         const result = streamText({
           model: google("gemini-2.0-flash-exp"),
           system: systemPrompt,

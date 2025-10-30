@@ -73,14 +73,14 @@ async function processDocxFiles(message: ChatMessage): Promise<ChatMessage> {
           // Convert to text part with document context
           return {
             type: "text" as const,
-            text: `[Document: ${part.name}]\n\n${text}`,
+            text: `[Document: ${part.filename || 'Unknown'}]\n\n${text}`,
           };
         } catch (error) {
-          console.error(`Failed to process DOCX file ${part.name}:`, error);
+          console.error(`Failed to process DOCX file ${part.filename}:`, error);
           // Fallback to text part with error message
           return {
             type: "text" as const,
-            text: `[Failed to process document: ${part.name}]`,
+            text: `[Failed to process document: ${part.filename || 'Unknown'}]`,
           };
         }
       }
@@ -233,13 +233,7 @@ export async function POST(request: Request) {
           messages: convertToModelMessages(uiMessages),
           stopWhen: stepCountIs(5),
           experimental_transform: smoothStream({ chunking: "word" }),
-          experimental_providerMetadata: {
-            anthropic: {
-              thinkingConfig: {
-                type: "enabled",
-                budget_tokens: 2000,
-              },
-            },
+          providerOptions: {
             google: {
               thinkingConfig: {
                 enabled: true,

@@ -181,7 +181,9 @@ export function AdminSidebar({ user }: { user: User | undefined }) {
                   className="flex flex-col gap-1 rounded-md p-2 hover:bg-muted transition-colors"
                 >
                   <div className="flex items-start gap-2">
-                    <FileIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <div className="mt-0.5 flex-shrink-0">
+                      <FileIcon size={16} />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium truncate">
                         {doc.title}

@@ -87,7 +87,7 @@ export default function AdminDocumentChatPage() {
     },
   });
 
-  const isLoading = status === "in_progress";
+  const isLoading = status === "streaming";
 
   useEffect(() => {
     loadDocument();
@@ -114,7 +114,7 @@ export default function AdminDocumentChatPage() {
     // Get the last user message to regenerate
     const lastUserMessage = newMessages[newMessages.length - 1];
     if (lastUserMessage && lastUserMessage.role === "user") {
-      sendMessage({ content: lastUserMessage.content, role: "user" });
+      sendMessage({ parts: lastUserMessage.parts, role: "user" });
     }
   };
 
@@ -257,7 +257,9 @@ export default function AdminDocumentChatPage() {
       {/* Document Header */}
       <div className="border-b p-4">
         <div className="flex items-start gap-3">
-          <FileIcon className="h-6 w-6 mt-1 flex-shrink-0" />
+          <div className="mt-1 flex-shrink-0">
+            <FileIcon size={24} />
+          </div>
           <div className="flex-1">
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -325,7 +327,7 @@ export default function AdminDocumentChatPage() {
         <ConversationContent>
           {messages.length === 0 && document.status === "ready" ? (
             <ConversationEmptyState
-              icon={<FileIcon className="h-12 w-12" />}
+              icon={<FileIcon size={48} />}
               title="Ask questions about this document"
               description="You can ask questions about the content, request summaries, or get specific information from the document."
             />
@@ -340,36 +342,39 @@ export default function AdminDocumentChatPage() {
                     {message.role === "assistant" ? (
                       <div className="space-y-3">
                         {/* Chain of Thought - Show reasoning steps */}
-                        {message.annotations && message.annotations.length > 0 && (
-                          <ChainOfThought defaultOpen={false}>
-                            <ChainOfThoughtHeader>
-                              Thinking Process
-                            </ChainOfThoughtHeader>
-                            <ChainOfThoughtContent>
-                              {message.annotations
-                                .filter((ann: any) => ann.type === "reasoning")
-                                .map((ann: any, idx: number) => (
+                        {(() => {
+                          const reasoningParts = message.parts.filter((part: any) => part.type === "reasoning");
+                          return reasoningParts.length > 0 && (
+                            <ChainOfThought defaultOpen={false}>
+                              <ChainOfThoughtHeader>
+                                Thinking Process
+                              </ChainOfThoughtHeader>
+                              <ChainOfThoughtContent>
+                                {reasoningParts.map((part: any, idx: number) => (
                                   <ChainOfThoughtStep
                                     key={idx}
                                     icon={idx === 0 ? Search : idx === 1 ? FileText : Lightbulb}
-                                    label={ann.value?.reasoning || ann.value}
+                                    label={part.text}
                                     status="complete"
                                   />
                                 ))}
-                            </ChainOfThoughtContent>
-                          </ChainOfThought>
-                        )}
+                              </ChainOfThoughtContent>
+                            </ChainOfThought>
+                          );
+                        })()}
 
                         {/* Response */}
                         <div className="rounded-lg px-4 py-2 bg-muted">
                           <Response className="text-sm prose prose-sm dark:prose-invert max-w-none">
-                            {message.content}
+                            {message.parts.filter((part: any) => part.type === "text").map((part: any) => part.text).join("")}
                           </Response>
                         </div>
                       </div>
                     ) : (
                       <div className="rounded-lg px-4 py-2 bg-primary text-primary-foreground">
-                        <div className="text-sm whitespace-pre-wrap">{message.content}</div>
+                        <div className="text-sm whitespace-pre-wrap">
+                          {message.parts.filter((part: any) => part.type === "text").map((part: any) => part.text).join("")}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -377,7 +382,7 @@ export default function AdminDocumentChatPage() {
                     <Actions>
                       <Action
                         tooltip="Copy"
-                        onClick={() => handleCopyMessage(message.content)}
+                        onClick={() => handleCopyMessage(message.parts.filter((part: any) => part.type === "text").map((part: any) => part.text).join(""))}
                       >
                         <Copy className="size-4" />
                       </Action>
@@ -413,7 +418,7 @@ export default function AdminDocumentChatPage() {
             if (!input.trim() || isLoading || document.status !== "ready") return;
 
             console.log("Sending message:", { input, documentId });
-            sendMessage({ content: input, role: "user" });
+            sendMessage({ parts: [{ type: "text", text: input }], role: "user" });
             setInput("");
           }}
           className="flex gap-2"

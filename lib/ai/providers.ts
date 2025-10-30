@@ -1,4 +1,3 @@
-import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import {
   customProvider,
@@ -26,21 +25,21 @@ export const myProvider = isTestEnvironment
     })()
   : customProvider({
       languageModels: {
-        "chat-model": wrapLanguageModel({
-          model: anthropic("claude-3-7-sonnet-20250219"),
-          middleware: extractReasoningMiddleware({ tagName: "thinking" }),
-        }),
-        "chat-model-reasoning": wrapLanguageModel({
-          model: anthropic("claude-3-7-sonnet-20250219"),
-          middleware: extractReasoningMiddleware({ tagName: "thinking" }),
-        }),
         "gemini-2.5-pro": wrapLanguageModel({
-          model: google("gemini-2.5-pro-exp-03-25"),
+          model: google("gemini-2.0-flash-thinking-exp-1219"),
           middleware: extractReasoningMiddleware({ tagName: "thinking" }),
         }),
-        "title-model": anthropic("claude-3-5-haiku-20241022"),
+        "gemini-1.5-pro": wrapLanguageModel({
+          model: google("gemini-1.5-pro"),
+          middleware: extractReasoningMiddleware({ tagName: "thinking" }),
+        }),
+        "gemini-1.5-flash": wrapLanguageModel({
+          model: google("gemini-1.5-flash"),
+          middleware: extractReasoningMiddleware({ tagName: "thinking" }),
+        }),
+        "title-model": google("gemini-1.5-flash"),
         "artifact-model": wrapLanguageModel({
-          model: anthropic("claude-3-7-sonnet-20250219"),
+          model: google("gemini-2.0-flash-thinking-exp-1219"),
           middleware: extractReasoningMiddleware({ tagName: "thinking" }),
         }),
       },

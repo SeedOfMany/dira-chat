@@ -261,16 +261,14 @@ export default function AdminPage() {
                         >
                           <div className="flex-shrink-0">
                             {file.status === "success" && (
-                              <CheckCircleFillIcon
-                                size={16}
-                                className="text-green-500"
-                              />
+                              <div className="text-green-500">
+                                <CheckCircleFillIcon size={16} />
+                              </div>
                             )}
                             {file.status === "uploading" && (
-                              <LoaderIcon
-                                size={16}
-                                className="animate-spin text-blue-500"
-                              />
+                              <div className="animate-spin text-blue-500">
+                                <LoaderIcon size={16} />
+                              </div>
                             )}
                             {file.status === "error" && (
                               <div className="h-4 w-4 rounded-full bg-red-500" />
