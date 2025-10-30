@@ -128,21 +128,20 @@ const PurePreviewMessage = ({
 
             return (
               <>
-                {/* Render reasoning first, but only if there's text content OR not loading */}
-                {(hasTextContent || !isLoading) &&
-                  reasoningParts.map((part, index) => {
-                    const key = `message-${message.id}-reasoning-${index}`;
-                    if (part.type === "reasoning" && "text" in part) {
-                      return (
-                        <MessageReasoning
-                          isLoading={isLoading}
-                          key={key}
-                          reasoning={part.text}
-                        />
-                      );
-                    }
-                    return null;
-                  })}
+                {/* Render reasoning immediately when it exists */}
+                {reasoningParts.map((part, index) => {
+                  const key = `message-${message.id}-reasoning-${index}`;
+                  if (part.type === "reasoning" && "text" in part) {
+                    return (
+                      <MessageReasoning
+                        isLoading={isLoading}
+                        key={key}
+                        reasoning={part.text}
+                      />
+                    );
+                  }
+                  return null;
+                })}
 
                 {/* Render all other parts */}
                 {otherParts.map((part, index) => {

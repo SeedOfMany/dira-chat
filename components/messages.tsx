@@ -9,7 +9,7 @@ import type { ChatMessage } from "@/lib/types";
 import { useDataStream } from "./data-stream-provider";
 import { Conversation, ConversationContent } from "./elements/conversation";
 import { Greeting } from "./greeting";
-import { PreviewMessage, ThinkingMessage } from "./message";
+import { PreviewMessage } from "./message";
 
 type MessagesProps = {
   chatId: string;
@@ -90,10 +90,6 @@ function PureMessages({
               }
             />
           ))}
-
-          <AnimatePresence mode="wait">
-            {status === "submitted" && <ThinkingMessage key="thinking" />}
-          </AnimatePresence>
 
           <div
             className="min-h-[24px] min-w-[24px] shrink-0"
