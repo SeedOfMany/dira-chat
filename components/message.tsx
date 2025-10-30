@@ -111,14 +111,19 @@ const PurePreviewMessage = ({
             const reasoningParts =
               message.parts?.filter(
                 (part) =>
-                  part.type === "reasoning" && part.text?.trim().length > 0,
+                  part.type === "reasoning" &&
+                  "text" in part &&
+                  part.text?.trim().length > 0,
               ) || [];
             const otherParts =
               message.parts?.filter((part) => part.type !== "reasoning") || [];
 
             // Check if there's any text content to show
             const hasTextContent = otherParts.some(
-              (part) => part.type === "text" && part.text?.trim().length > 0,
+              (part) =>
+                part.type === "text" &&
+                "text" in part &&
+                part.text?.trim().length > 0,
             );
 
             return (
@@ -127,13 +132,16 @@ const PurePreviewMessage = ({
                 {(hasTextContent || !isLoading) &&
                   reasoningParts.map((part, index) => {
                     const key = `message-${message.id}-reasoning-${index}`;
-                    return (
-                      <MessageReasoning
-                        isLoading={isLoading}
-                        key={key}
-                        reasoning={part.text}
-                      />
-                    );
+                    if (part.type === "reasoning" && "text" in part) {
+                      return (
+                        <MessageReasoning
+                          isLoading={isLoading}
+                          key={key}
+                          reasoning={part.text}
+                        />
+                      );
+                    }
+                    return null;
                   })}
 
                 {/* Render all other parts */}
