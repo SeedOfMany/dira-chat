@@ -14,13 +14,12 @@ export const chatModels: ChatModel[] = [
   },
   {
     id: "gemini-1.5-pro",
-    name: "Gemini 2.0 Flash",
+    name: "Gemini 2.5 Flash",
     description: "Fast and versatile multimodal model",
   },
   {
     id: "gemini-1.5-flash",
-    name: "Gemini 2.0 Flash Exp",
-    description: "Experimental fast model with latest features",
+    name: "Gemini 2.5 Flash",
+    description: "Fast and efficient model with latest features",
   },
-];</parameter>
 ];

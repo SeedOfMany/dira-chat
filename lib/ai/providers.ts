@@ -30,14 +30,14 @@ export const myProvider = isTestEnvironment
           middleware: extractReasoningMiddleware({ tagName: "thinking" }),
         }),
         "gemini-1.5-pro": wrapLanguageModel({
-          model: google("gemini-2.0-flash-exp"),
+          model: google("gemini-2.5-flash"),
           middleware: extractReasoningMiddleware({ tagName: "thinking" }),
         }),
         "gemini-1.5-flash": wrapLanguageModel({
-          model: google("gemini-2.0-flash-exp"),
+          model: google("gemini-2.5-flash"),
           middleware: extractReasoningMiddleware({ tagName: "thinking" }),
         }),
-        "title-model": google("gemini-2.0-flash-exp"),
+        "title-model": google("gemini-2.5-flash"),
         "artifact-model": wrapLanguageModel({
           model: google("gemini-2.5-pro"),
           middleware: extractReasoningMiddleware({ tagName: "thinking" }),
