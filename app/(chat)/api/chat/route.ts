@@ -59,7 +59,8 @@ async function processDocxFiles(message: ChatMessage): Promise<ChatMessage> {
       // Only process DOCX file parts
       if (
         part.type === "file" &&
-        part.mediaType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        part.mediaType ===
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       ) {
         try {
           // Fetch the DOCX file from the URL
@@ -73,21 +74,21 @@ async function processDocxFiles(message: ChatMessage): Promise<ChatMessage> {
           // Convert to text part with document context
           return {
             type: "text" as const,
-            text: `[Document: ${part.filename || 'Unknown'}]\n\n${text}`,
+            text: `[Document: ${part.filename || "Unknown"}]\n\n${text}`,
           };
         } catch (error) {
           console.error(`Failed to process DOCX file ${part.filename}:`, error);
           // Fallback to text part with error message
           return {
             type: "text" as const,
-            text: `[Failed to process document: ${part.filename || 'Unknown'}]`,
+            text: `[Failed to process document: ${part.filename || "Unknown"}]`,
           };
         }
       }
 
       // Return other parts unchanged
       return part;
-    })
+    }),
   );
 
   return {
@@ -103,13 +104,13 @@ const getTokenlensCatalog = cache(
     } catch (err) {
       console.warn(
         "TokenLens: catalog fetch failed, using default catalog",
-        err
+        err,
       );
       return; // tokenlens helpers will fall back to defaultCatalog
     }
   },
   ["tokenlens-catalog"],
-  { revalidate: 24 * 60 * 60 } // 24 hours
+  { revalidate: 24 * 60 * 60 }, // 24 hours
 );
 
 export function getStreamContext() {
@@ -121,7 +122,7 @@ export function getStreamContext() {
     } catch (error: any) {
       if (error.message.includes("REDIS_URL")) {
         console.log(
-          " > Resumable streams are disabled due to missing REDIS_URL"
+          " > Resumable streams are disabled due to missing REDIS_URL",
         );
       } else {
         console.error(error);
@@ -196,7 +197,10 @@ export async function POST(request: Request) {
     // Process DOCX files: extract text and convert to text parts
     const processedMessage = await processDocxFiles(message);
 
-    const uiMessages = [...convertToUIMessages(messagesFromDb), processedMessage];
+    const uiMessages = [
+      ...convertToUIMessages(messagesFromDb),
+      processedMessage,
+    ];
 
     const { longitude, latitude, city, country } = geolocation(request);
 
@@ -292,7 +296,7 @@ export async function POST(request: Request) {
         dataStream.merge(
           result.toUIMessageStream({
             sendReasoning: true,
-          })
+          }),
         );
       },
       generateId: generateUUID,
@@ -346,7 +350,7 @@ export async function POST(request: Request) {
     if (
       error instanceof Error &&
       error.message?.includes(
-        "AI Gateway requires a valid credit card on file to service requests"
+        "AI Gateway requires a valid credit card on file to service requests",
       )
     ) {
       return new ChatSDKError("bad_request:activate_gateway").toResponse();
