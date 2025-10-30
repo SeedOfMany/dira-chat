@@ -26,7 +26,7 @@ export const myProvider = isTestEnvironment
   : customProvider({
       languageModels: {
         "gemini-2.5-pro": wrapLanguageModel({
-          model: google("gemini-2.0-flash-thinking-exp-1219"),
+          model: google("gemini-2.0-flash-exp"),
           middleware: extractReasoningMiddleware({ tagName: "thinking" }),
         }),
         "gemini-1.5-pro": wrapLanguageModel({
@@ -39,7 +39,7 @@ export const myProvider = isTestEnvironment
         }),
         "title-model": google("gemini-1.5-flash"),
         "artifact-model": wrapLanguageModel({
-          model: google("gemini-2.0-flash-thinking-exp-1219"),
+          model: google("gemini-2.0-flash-exp"),
           middleware: extractReasoningMiddleware({ tagName: "thinking" }),
         }),
       },
